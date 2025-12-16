@@ -1,0 +1,138 @@
+# Design Template – Einheitliches UI für Pferdetransporter Gelpe
+
+Ziel: Konsistentes, modernes Dark-Theme mit grünen Flächen und goldenen Akzenten. Keine klassischen „Box-Karten“; stattdessen transparente Sektionen mit feinem Ring und White-Typografie.
+
+1) Farb- und Theme-Grundlagen
+- Primärgrün (Hintergrund): #1a5d1a (Tailwind: primary-900)
+- Tiefgrün (Navigation/Abschnitte): #0f4a0f (Tailwind: primary-950)
+- Akzent (Highlights/Buttons): #eab308 (Tailwind: accent)
+- Text: Weiß (#ffffff) auf grünem Grund; Weiß-Varianten (White/80, White/60) für Hierarchie
+- Ringe (Outlines): Weiß/10 (rgba(255,255,255,0.1))
+- Transparenz: Oberflächen statt Karten mit bg-white/5 + ring-white/10
+
+Verläufe/Layering (Beispiele)
+- Abschnittshintergrund: bg-gradient-to-b from-primary-950 to-primary-900
+- Overlays auf Medien: bg-black/40 + gradient von primary-950/60
+
+2) Typografie
+- Grundschrift: Inter (400–700)
+- Display/Headlines: Antic Didone für H1/Hero
+- Größen: H1 3xl–7xl, H2 2xl–4xl, Fließtext base–lg
+- Farben: Headlines text-white, Fließtext text-white/85; Sekundärinfos text-white/70–60
+
+3) Layout-Prinzipien
+- Keine weißen Cards; stattdessen transparente Sektionen:
+  class: "rounded-xl bg-white/5 ring-1 ring-white/10 p-6 md:p-8"
+- Section-Spacings: py-16–20; Grid: max-w-6xl–7xl, gap-8–12
+- Border-Radius: rounded-xl oder rounded-2xl, konsistent
+- Schatten sparsam (meist Ring statt Shadow)
+
+4) Komponentenrichtlinien (Tailwind-Snippets)
+- Primär-Button (Akzent):
+  "inline-flex items-center px-6 py-3 bg-accent text-black font-semibold rounded-xl hover:bg-accent/90 transition-colors shadow-md hover:shadow-lg"
+- Sekundär-Button (dunkel):
+  "px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 border border-white/10"
+- Eingabefelder (Form):
+  "w-full p-4 rounded-xl bg-white/5 ring-1 ring-white/10 text-white placeholder:text-white/60 focus:ring-2 focus:ring-accent focus:outline-none"
+- Label: "text-white font-semibold"
+- Hinweis-/Info-Box:
+  "rounded-xl bg-white/5 ring-1 ring-white/10 p-6 text-white"
+- Icon-Badge: Kreis mit Akzent
+  "inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent/20 ring-2 ring-accent/40 text-accent"
+
+5) Navigations- und Footer-Farben
+- Header: bg-primary-950, aktive Links text-accent + border-b-2 border-accent
+- Footer: bg-primary-950, Headlines text-accent, Text weiß/weiß-80
+
+6) Hero-/Medien-Abschnitte
+- Medien vollflächig, darüber Mehrschicht-Overlay:
+  - bg-black/40 + bg-gradient-to-b from-primary-950/60 via-primary-900/40 to-transparent
+- CTA-Button immer Akzent-Gelb
+
+7) Listen, Preise, Feature-Grids
+- Keine Karten; Listen typografisch strukturieren
+- Bullet/Check-Icon in Akzent (Lucide CheckCircle w-4 h-4 text-accent)
+- Spalten-Grid: gap-10–12; Text: weiß/weiß-85
+
+8) Form-Wizard (Buchung)
+- Progress-Bar: Track bg-white/15, Füllung bg-accent
+- Step-Icons: aktiv "bg-primary-900 text-white border-2 border-accent"; erledigt "bg-accent text-black"; inaktiv "bg-white/10 text-white/70"
+- Schritt-Buttons:
+  - Zurück: Sekundär-Button-Stil (s.o.)
+  - Weiter: Akzent-Button; in Schritt 1 Label = "Preis berechnen"
+- Hinweise/Stornos: zentriert in Info-Box (siehe 4)
+
+9) Kalender (react-day-picker via `src/components/ui/calendar.tsx`)
+- Überschriften/Weekdays: weiß/weiß-70
+- Tage: text-white; Hover bg-accent text-black
+- Selected: bg-accent text-black; Today-Dot: accent
+- Navigationspfeile: text-white/80 hover:text-white
+
+10) Galerie
+- Ohne Box-Rahmen; reines Image-Stage mit kleinem Ring optional
+- Thumbnails: ring-accent bei aktivem Item
+
+11) Seiten-spezifisch
+- FAQ: Such- und Filterfelder transparent (bg-white/5 + ring-white/10); Fragen weiß, Antworten in bg-white/5; CTA unten im gleichen Stil
+- Kontakt: alle Sektionen in transparenten Boxen; Texte weiß/weiß-85, Call-To-Actions in Akzent oder weiß
+- Zahlung/Stripe: Einleitbox entfernen; Button in Akzent. Stripe Elements innerhalb einer transparenten Box. Standard-Hinweistext ausblenden.
+
+12) Icons
+- Lucide Icons; Akzent-gelb für wichtige Marker, sonst weiß/weiß-70
+- Größen: 16–24 px normal; 32–56 px in Hero/CTA
+
+13) Abstände & Rhythmus
+- Vertikaler Rhythmus: 8/12/16/20 (rem-basierte Tailwind-Abstände)
+- Innenabstände in Boxen: p-6 auf Mobil, p-8 auf Desktop
+
+14) Zustände & Feedback
+- Fehler: ring-red-500/40 in Box, Text weiß
+- Erfolg: Icon/Marker in accent oder success (#22c55e) nur falls nötig
+- Disable: opacity-50 + cursor-not-allowed
+
+15) Barrierefreiheit
+- Kontrast beachten (weiß auf grün, gelb mit schwarzer Typo)
+- Fokus: focus:ring-2 focus:ring-accent
+- Klickflächen ≥ 44px Höhe
+
+16) Tailwind-Konfiguration (bereits vorhanden)
+- Farben in `tailwind.config.js` (primary, accent, etc.)
+- Fonts in `globals.css` importiert (Inter, Antic Didone)
+
+17) Do/Don't
+- Do: Transparente Sektionen, feine Ringe, weiße Typo, gelbe Highlights
+- Do: Wenig Schatten, viel Raum, klare Hierarchie
+- Don't: Klassische weiße Karten/Kachelraster für Inhalte
+- Don't: Harte graue Rahmen (stattdessen white/10 Ringe)
+
+18) Code-Beispiele
+Buttons
+```tsx
+<button className="px-6 py-3 bg-accent text-black font-semibold rounded-xl hover:bg-accent/90">Jetzt reservieren</button>
+<button className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 border border-white/10">Zurück</button>
+```
+
+Form-Feld
+```tsx
+<input className="w-full p-4 rounded-xl bg-white/5 ring-1 ring-white/10 text-white placeholder:text-white/60 focus:ring-2 focus:ring-accent focus:outline-none" />
+```
+
+Sektion
+```tsx
+<section className="py-20 bg-gradient-to-b from-primary-950 to-primary-900">
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="rounded-xl bg-white/5 ring-1 ring-white/10 p-8 text-white">Inhalt</div>
+  </div>
+</section>
+```
+
+19) Review-Checkliste vor Merge
+- Weißtypografie konsistent? (Headlines/Copy/Labels)
+- Keine weißen Cards benutzt?
+- Boxen mit bg-white/5 + ring-white/10?
+- Buttons als Akzent/Sekundär korrekt?
+- Kalender/Step-Icons gemäß Vorgabe?
+- Seite mobil ≤ 375px getestet (Abstände, Lesbarkeit)?
+
+Quelle der Regeln
+- Abgeleitet aus implementierten Seiten: Landing, Buchung (alle Steps), FAQ, Kontakt, Galerie
