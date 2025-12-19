@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 // Let's make the Page Client Component? No, let's make the Table Row a Client Component.
 // Actually, for simplicity, let's keep Page Server but use a Client Component for the Actions Cell.
 
-import { BookingActions } from "./booking-actions-cell"; // We will create this
+import { BookingActions } from "./booking-actions-cell";
+import { AdminExportButton } from "@/components/admin/export-button"; // We will create this
 
 export default async function AdminBookingsPage() {
     const supabase = await createClient();
@@ -34,8 +35,11 @@ export default async function AdminBookingsPage() {
         <div className="space-y-6">
             <header className="flex justify-between items-center">
                 <h1 className="text-3xl font-display font-bold text-white">Buchungen</h1>
-                <div className="bg-white/10 px-4 py-2 rounded-full text-sm text-white/70">
-                    {bookings?.length || 0} Buchungen
+                <div className="flex items-center gap-4">
+                    <div className="bg-white/10 px-4 py-2 rounded-full text-sm text-white/70">
+                        {bookings?.length || 0} Buchungen
+                    </div>
+                    <AdminExportButton bookings={bookings || []} />
                 </div>
             </header>
 

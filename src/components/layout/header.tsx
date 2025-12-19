@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
+import { UserNav } from "@/components/layout/user-nav";
 
 const navigation = [
     { name: "Start", href: "/" },
@@ -101,11 +102,7 @@ export function Header() {
                 <div className="flex items-center gap-4">
                     {mounted ? (
                         user ? (
-                            <Button asChild className="hidden sm:inline-flex bg-accent hover:bg-accent/90 text-primary-950 font-semibold shadow-xl shadow-accent/10">
-                                <Link href="/dashboard">
-                                    {profile?.first_name ? `Hi, ${profile.first_name}` : 'Dashboard'}
-                                </Link>
-                            </Button>
+                            <UserNav user={user} profile={profile} />
                         ) : (
                             <div className="flex items-center gap-2">
                                 <Button asChild variant="ghost" className="text-white hover:text-accent hidden sm:inline-flex">

@@ -22,6 +22,8 @@ export function Hero() {
             <div className="absolute inset-0 bg-black/40 z-10" />
             {/* 2. Gradient from bottom (brand colors) */}
             <div className="absolute inset-0 bg-gradient-to-b from-primary-950/60 via-primary-900/40 to-primary-950 z-10" />
+            {/* 3. Gradient from top (shadow) */}
+            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent z-10 pointer-events-none" />
 
             {/* Content */}
             <div className="relative z-20 container mx-auto px-4 text-center space-y-6 max-w-4xl">
@@ -36,7 +38,7 @@ export function Hero() {
                 </p>
 
                 <div className="pt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-10 shadow-accent/20 bg-accent text-primary-950 hover:bg-accent/90 border border-transparent font-semibold" asChild>
+                    <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-10 bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 shadow-lg font-semibold transition-all" asChild>
                         <Link href="/buchen">Jetzt buchen</Link>
                     </Button>
                     <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg h-14 px-10 text-white border-white/20 hover:bg-white/10 hover:text-white backdrop-blur-sm bg-black/20" asChild>

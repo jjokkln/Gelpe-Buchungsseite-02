@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { differenceInYears } from "date-fns";
 
@@ -24,7 +25,7 @@ export default function LoginPage() {
     const supabase = createClient();
 
     // Redirect if already logged in
-    useState(() => {
+    useEffect(() => {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
@@ -32,7 +33,7 @@ export default function LoginPage() {
             }
         };
         checkSession();
-    });
+    }, [router, supabase]);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,7 +54,8 @@ export default function LoginPage() {
                     throw new Error("Sie müssen mindestens 21 Jahre alt sein, um sich zu registrieren.");
                 }
 
-                const { error: signUpError } = await supabase.auth.signUp({
+                // 1. Sign Up
+                const { data: { user }, error: signUpError } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
@@ -66,8 +68,41 @@ export default function LoginPage() {
                     },
                 });
                 if (signUpError) throw signUpError;
+                if (!user) throw new Error("Registrierung fehlgeschlagen.");
+
+                // 2. Create Profile manually (redundancy for Trigger)
+                const { error: profileError } = await supabase
+                    .from("profiles")
+                    .insert({
+                        id: user.id,
+                        first_name: firstName,
+                        last_name: lastName,
+                        phone: phone,
+                        birth_date: birthDate,
+                    })
+                    .select()
+                    .single();
+
+                // If profile exists (trigger won race), ignore error. If unexpected error, throw?
+                // Actually if profile already exists (trigger), insert might fail with duplicate key?
+                // Use UPSERT to be safe.
+                if (profileError) {
+                    // If error is duplicate key, it means trigger worked or something.
+                    // Try Upsert instead?
+                    const { error: upsertError } = await supabase.from("profiles").upsert({
+                        id: user.id,
+                        first_name: firstName,
+                        last_name: lastName,
+                        phone: phone,
+                        birth_date: birthDate,
+                    });
+                    if (upsertError) {
+                        console.error("Profile creation failed:", upsertError);
+                        // Continue anyway, maybe trigger worked? User can edit profile later.
+                    }
+                }
             }
-            // Successful auth -> redirect to booking
+            // Successful auth -> redirect to booking or dashboard
             router.push("/buchen");
             router.refresh();
         } catch (err: any) {
@@ -162,17 +197,6 @@ export default function LoginPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone" className="text-white">Telefonnummer</Label>
-                                <Input
-                                    id="phone"
-                                    type="tel"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    required={!isLogin}
-                                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent"
-                                />
-                            </div>
-                            <div className="space-y-2">
                                 <Label htmlFor="birthDate" className="text-white">Geburtsdatum (Mind. 21 Jahre)</Label>
                                 <Input
                                     id="birthDate"
@@ -207,6 +231,14 @@ export default function LoginPage() {
                             required
                             className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent"
                         />
+                        <div className="flex justify-end mt-1">
+                            <Link
+                                href="/login/forgot"
+                                className="text-xs text-white/60 hover:text-white transition-colors"
+                            >
+                                Passwort vergessen?
+                            </Link>
+                        </div>
                     </div>
 
                     {error && (

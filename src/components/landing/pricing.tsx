@@ -21,7 +21,7 @@ export function Pricing() {
             </div>
 
             {/* Table Layout for Desktop */}
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm">
+            <div className="hidden md:block overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-white/10 bg-white/5 text-sm font-medium text-white/60 uppercase tracking-wider">
@@ -52,6 +52,40 @@ export function Pricing() {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Cards Layout */}
+            <div className="md:hidden space-y-4">
+                {tariffs.map((tariff) => (
+                    <div
+                        key={tariff.name}
+                        className={`
+                            rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 relative overflow-hidden
+                            ${tariff.popular ? 'ring-1 ring-accent/50' : ''}
+                        `}
+                    >
+                        {tariff.popular && (
+                            <div className="absolute top-0 right-0 bg-accent text-black text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                                Beliebt
+                            </div>
+                        )}
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="font-display font-bold text-xl text-white">{tariff.name}</h3>
+                            <span className="font-bold text-accent text-xl">{tariff.price}</span>
+                        </div>
+
+                        <div className="space-y-2 text-sm text-white/80">
+                            <div className="flex justify-between py-2 border-b border-white/5">
+                                <span>Inklusive km</span>
+                                <span className="font-medium text-white">{tariff.km}</span>
+                            </div>
+                            <div className="flex justify-between py-2">
+                                <span>Zusatz-km</span>
+                                <span className="font-medium text-white">{tariff.extra}</span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Additional Costs Info */}

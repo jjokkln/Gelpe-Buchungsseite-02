@@ -13,10 +13,14 @@ export default async function DashboardPage(props: { searchParams: Promise<{ suc
 
     if (!user) return null; // Handled by layout
 
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
     const { data: bookings } = await supabase
         .from("bookings")
         .select("*")
         .eq("user_id", user.id)
+        .gte("end_date", yesterday.toISOString()) // Hide old bookings
         .order("created_at", { ascending: false });
 
     return (

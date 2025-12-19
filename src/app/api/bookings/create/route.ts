@@ -113,47 +113,41 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true });
         }
 
-        // 5. Create Stripe Session
+        // 5. Create Stripe Session - NO DB INSERT YET
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
             line_items: [
                 {
                     price_data: {
                         currency: "eur",
-                        product_data: {
-                            name: `Pferdetransporter - ${tariff}`,
-                            description: `${start.toLocaleString("de-DE")} - ${end.toLocaleString("de-DE")} ${extraKm > 0 ? `(+ ${extraKm} km)` : ""}`,
-                        },
+                        product: "prod_T1V7efZATPBClp", // Derived from user's Price ID price_1Sf8bD4SiLmf0yf2125Tg8FW
                         unit_amount: Math.round(totalPrice * 100), // Cents
                     },
                     quantity: 1,
                 },
             ],
             mode: "payment",
+            allow_promotion_codes: true,
             success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
             cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/buchen?canceled=true`,
             metadata: {
+                // Pass ALL necessary data to create the booking in the webhook
                 userId,
                 startDate: startDate,
                 endDate: endDate,
                 tariff,
-                extraKm: String(extraKm)
+                extraKm: String(extraKm),
+                totalPrice: String(totalPrice),
+                firstName: profile.first_name || "Unbekannt",
+                lastName: profile.last_name || "Unbekannt",
+                email: user.email || "unknown@example.com",
+                phone: profile.phone || "Nicht angegeben"
             }
         });
 
-        // 6. Insert into DB (Stripe)
-        const { error } = await supabase.from("bookings").insert({
-            ...bookingPayload,
-            payment_method: "stripe",
-            stripe_session_id: session.id
-        });
-
-        if (error) {
-            console.error("DB Error:", error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        }
-
+        // Return URL directly without creating a booking record
         return NextResponse.json({ url: session.url });
+
     } catch (err: unknown) {
         console.error("API Error:", err);
         const errorMessage = err instanceof Error ? err.message : "Unknown error";

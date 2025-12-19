@@ -11,10 +11,11 @@ Dieses Dokument listet den Status aller Features pro Seite auf, um offene Punkte
 
 ### Landing Page (`/`)
 - [x] **Hero Section**: Bild, Headline, "Buchen"-CTA.
+- [x] **Gallery**: Slideshow mit Einblicken (Mobile Optimized).
 - [x] **Features**: Grid-Layout mit Icons (Kamera, Klima, etc.).
 - [x] **Preistabelle**: Übersicht der Tarife (Halbtag, Tag, WE, Woche) & Zusatzkosten.
 - [x] **Footer**: Links zu Rechtstexten, Socials.
-- [ ] **SEO**: Meta-Tags & OpenGraph Daten optimieren.
+- [x] **SEO**: Meta-Tags & OpenGraph Daten optimieren.
 
 ### Buchungsprozess (`/buchen`)
 - [x] **Wizard-Layout**: Schritt-für-Schritt Navigation (Zeit -> Zahlung -> Ende).
@@ -38,7 +39,7 @@ Dieses Dokument listet den Status aller Features pro Seite auf, um offene Punkte
 - [x] **Login**: Email/Passwort Login via Supabase.
 - [x] **Registrierung**: Konto-Erstellung mit Profildaten (Name, Tel, Geburtsdatum Check > 21).
 - [x] **Design**: Hintergrundbild & Glassmorphism Card.
-- [ ] **Passwort vergessen**: Flow fehlt komplett.
+- [x] **Passwort vergessen**: Flow implementiert (`/login/forgot` & `/dashboard/profile`).
 
 ### Rechtliches & Info
 - [x] **FAQ** (`/faq`): Accordion mit Fragen.
@@ -55,11 +56,11 @@ Dieses Dokument listet den Status aller Features pro Seite auf, um offene Punkte
 - [x] **Buchungsliste**: Anzeige aller eigenen Buchungen.
 - [x] **Status-Anzeige**: Reserved / Paid / Cancelled.
 - [x] **Success-Message**: Rückmeldung nach Stripe-Redirect.
-- [ ] **Rechnungs-Download**: PDF-Generierung für Buchungen fehlt.
+- [x] **Rechnungs-Download**: Client-seitige PDF-Generierung (`jspdf`).
 
 ### Profil (`/dashboard/profile`)
 - [x] **Daten ändern**: Formular für Adresse/Telefon.
-- [ ] **Passwort ändern**: Funktion fehlt.
+- [x] **Passwort ändern**: Formular implementiert.
 
 ---
 
@@ -75,7 +76,7 @@ Dieses Dokument listet den Status aller Features pro Seite auf, um offene Punkte
 ### Buchungs-Verwaltung (`/admin/bookings`)
 - [x] **Liste**: Tabelle aller Buchungen mit Filter/Sortierung.
 - [x] **Status-Änderung**: Manuelles Setzen auf "Bezahlt" (für Barzahler) oder "Storniert".
-- [ ] **Export**: CSV-Export für Buchhaltung fehlt.
+- [x] **Export**: CSV-Export Button implementiert.
 - [ ] **Detail-Ansicht**: Separate Seite für alle Details einer Buchung? (Aktuell in Tabelle/Dialog).
 
 ### Kalender-Verwaltung (`/admin/calendar`)
@@ -109,6 +110,5 @@ Dieses Dokument listet den Status aller Features pro Seite auf, um offene Punkte
 
 ## Zusammenfassung der wichtigsten fehlenden Features:
 1.  **Email-Versand** (Bestätigungen, Stornos, Passwort-Reset).
-2.  **Passwort Vergessen Flow**.
-3.  **PDF-Rechnung** für Nutzer.
-4.  **Auto-Cleanup** von abgebrochenen Buchungen.
+2.  **Auto-Cleanup** von abgebrochenen Buchungen.
+3.  **RLS Security Review**.

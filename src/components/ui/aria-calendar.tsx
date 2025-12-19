@@ -121,20 +121,20 @@ const CalendarCell = ({ className, ...props }: AriaCalendarCellProps) => {
                     renderProps.isDisabled && "text-white/20 opacity-30",
                     /* Selected */
                     renderProps.isSelected &&
-                    "bg-accent text-accent-foreground data-[focused]:bg-accent data-[focused]:text-accent-foreground shadow-sm shadow-accent/20",
+                    "bg-yellow-500 text-black data-[focused]:bg-yellow-500 data-[focused]:text-black shadow-sm shadow-yellow-500/50",
                     /* Hover */
                     renderProps.isHovered &&
                     renderProps.isSelected &&
                     (renderProps.isSelectionStart ||
                         renderProps.isSelectionEnd ||
                         !isRange) &&
-                    "data-[hovered]:bg-accent data-[hovered]:text-accent-foreground",
+                    "data-[hovered]:bg-yellow-600 data-[hovered]:text-black",
                     /* Selection Start/End */
                     renderProps.isSelected &&
                     isRange &&
                     !renderProps.isSelectionStart &&
                     !renderProps.isSelectionEnd &&
-                    "rounded-none bg-accent/20 text-white", // Middle range: lighter/transparent
+                    "rounded-none bg-yellow-500/30 text-white", // Middle range: lighter/transparent yellow
                     /* Outside Month */
                     renderProps.isOutsideMonth &&
                     "text-white/20 opacity-50 data-[selected]:bg-accent/10 data-[selected]:text-white/50 data-[selected]:opacity-30",

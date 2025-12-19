@@ -24,38 +24,66 @@ export async function POST(req: Request) {
 
     if (event.type === "checkout.session.completed") {
         const supabase = await createClient();
+        const metadata = session.metadata;
 
-        // Check if we have a booking with this session ID
-        // Note: We might want to use metadata.bookingId if we set it, 
-        // but looking up by stripe_session_id is robust if we saved it on creation.
+        if (!metadata || !metadata.userId || !metadata.startDate || !metadata.endDate) {
+            console.error("Missing booking metadata in Stripe session:", session.id);
+            return new NextResponse("Missing metadata", { status: 400 });
+        }
 
-        // Attempt 1: Lookup by stripe_session_id
-        const { data: booking, error: findError } = await supabase
+        const startDate = metadata.startDate;
+        const endDate = metadata.endDate;
+
+        // 1. Availability Check (Race Condition Protection)
+        // Ensure the slot wasn't taken while the user was paying.
+        const { count: conflictCount, error: conflictError } = await supabase
+            .from('bookings')
+            .select('id', { count: 'exact', head: true })
+            .in('booking_status', ['reserved', 'paid'])
+            .lt('start_date', endDate)
+            .gt('end_date', startDate);
+
+        const { count: blockConflictCount } = await supabase
+            .from('blocked_dates')
+            .select('id', { count: 'exact', head: true })
+            .lt('start_date', endDate)
+            .gt('end_date', startDate);
+
+        if ((conflictCount && conflictCount > 0) || (blockConflictCount && blockConflictCount > 0)) {
+            console.error(`CRITICAL: Slot taken for paid session ${session.id}. User charged but booking failed. Manual Refund Required.`);
+            // Return 200 to acknowledge receipt and stop Stripe retries. 
+            // We cannot fix this programmatically easily without a refund logic, which requires secret key permissions.
+            return new NextResponse("Slot taken", { status: 200 });
+        }
+
+        // 2. Create Booking
+        // Use the actual amount paid (in case of promo codes)
+        const amountPaidEur = session.amount_total ? session.amount_total / 100 : Number(metadata.totalPrice);
+
+        const bookingPayload = {
+            user_id: metadata.userId,
+            start_date: startDate,
+            end_date: endDate,
+            total_price_eur: amountPaidEur,
+            total_price: amountPaidEur, // Legacy
+            booking_status: "paid",
+            status: "paid",
+            payment_method: "stripe",
+            stripe_session_id: session.id,
+            rental_type: metadata.tariff,
+            customer_first_name: metadata.firstName,
+            customer_last_name: metadata.lastName,
+            customer_email: metadata.email,
+            customer_phone: metadata.phone,
+        };
+
+        const { error: insertError } = await supabase
             .from("bookings")
-            .select("id")
-            .eq("stripe_session_id", session.id)
-            .single();
+            .insert(bookingPayload);
 
-        if (booking) {
-            // Update the booking status
-            const { error: updateError } = await supabase
-                .from("bookings")
-                .update({
-                    booking_status: "paid",
-                    status: "paid", // Legacy support
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", booking.id);
-
-            if (updateError) {
-                console.error("Error updating booking:", updateError);
-                return new NextResponse("Database Error", { status: 500 });
-            }
-        } else {
-            // Warning: Booking not found for this session.
-            // This could happen if the DB insert failed but Stripe session was created?
-            // Or generic webhook test.
-            console.warn(`Booking not found for session: ${session.id}`);
+        if (insertError) {
+            console.error("Error creating booking from webhook:", insertError);
+            return new NextResponse("Database Error", { status: 500 });
         }
     }
 

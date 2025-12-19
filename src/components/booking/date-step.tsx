@@ -2,13 +2,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { differenceInMinutes, addHours, format } from "date-fns";
-import { Button } from "@/components/ui/button"; // Use standard button for the main action
+import { differenceInMinutes, addHours, format, setHours, setMinutes } from "date-fns";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TARIFFS, type TariffType } from "@/config/tariffs";
-import { JollyDateRangePicker } from "@/components/ui/date-range-picker";
-import { getLocalTimeZone, now, ZonedDateTime } from "@internationalized/date";
+import { JollyRangeCalendar } from "@/components/ui/aria-calendar";
+import { getLocalTimeZone, now, type DateValue, ZonedDateTime } from "@internationalized/date";
 
 export function DateStep({
     onNext,
@@ -17,24 +17,19 @@ export function DateStep({
     onNext: () => void;
     setBookingData: (data: any) => void;
 }) {
-    // Default to today 08:00 to tomorrow 08:00 (24h)
-    const [range, setRange] = useState<{ start: ZonedDateTime, end: ZonedDateTime } | null>(() => {
-        const _now = now(getLocalTimeZone());
-        // Default start: Next full hour or standard 08:00?
-        // Let's settle on current time for start, +24h for end
-        return {
-            start: _now,
-            end: _now.add({ hours: 24 })
-        };
-    });
+    // Dates (DateValue from Aria)
+    const [range, setRange] = useState<{ start: DateValue, end: DateValue } | null>(null);
+
+    // Times (Separate state for Manual Input)
+    const [startTime, setStartTime] = useState<string>("");
+    const [endTime, setEndTime] = useState<string>("");
 
     const [extraKm, setExtraKm] = useState<number>(0);
     const [calculatedTariff, setCalculatedTariff] = useState<TariffType>("fullDay");
     const [price, setPrice] = useState<number>(0);
-    const [blockedDates, setBlockedDates] = useState<string[]>([]); // Strings for easier comparison
+    const [blockedDates, setBlockedDates] = useState<string[]>([]);
 
     useEffect(() => {
-        // Fetch blocked dates
         const fetchBlocked = async () => {
             const { getBlockedDatesAction } = await import("@/app/actions/booking-actions");
             const today = new Date();
@@ -45,101 +40,155 @@ export function DateStep({
         fetchBlocked();
     }, []);
 
-    const isDateUnavailable = (date: ZonedDateTime) => {
-        const dateStr = date.toDate().toISOString().split('T')[0];
+    const isDateUnavailable = (date: DateValue) => {
+        const dateStr = date.toString(); // YYYY-MM-DD
         return blockedDates.includes(dateStr);
     };
 
     useEffect(() => {
-        if (!range?.start || !range?.end) return;
+        if (!range?.start || !range?.end || !startTime || !endTime) {
+            setPrice(0); // Reset price if info missing
+            return;
+        }
 
-        // Convert to JS Dates for calculation
-        const startDate = range.start.toDate();
-        const endDate = range.end.toDate();
+        // COMBINE Date + Time
+        const startDateTime = new Date(range.start.toString());
+        const [startH, startM] = startTime.split(':').map(Number);
 
-        const minutes = differenceInMinutes(endDate, startDate);
+        // Validation for partial input
+        if (isNaN(startH) || isNaN(startM)) return;
+
+        startDateTime.setHours(startH, startM);
+
+        const endDateTime = new Date(range.end.toString());
+        const [endH, endM] = endTime.split(':').map(Number);
+
+        if (isNaN(endH) || isNaN(endM)) return;
+
+        endDateTime.setHours(endH, endM);
+
+        // Logic check: If end is before start on same day? 
+        // Actually Calendar ensures start <= end date. 
+        // If same day, endTime must be > startTime?
+        // Let's assume user is smart, or we enforce min duration.
+
+        const minutes = differenceInMinutes(endDateTime, startDateTime);
         const hours = minutes / 60;
 
         // Determine Tariff
         let tariff: TariffType = "weekly";
-        if (hours <= 12.5) tariff = "halfDay"; // Tolerance for 12h
-        else if (hours <= 25) tariff = "fullDay"; // Tolerance for 24h
-        else if (hours <= 49) tariff = "weekend"; // Tolerance for 48h
-        else tariff = "weekly";
-
-        // Check if > 7 days (Logic per requirements: max 7 days)
-        if (hours > 7 * 24 + 4) { // 4h tolerance
-            // ...
+        if (hours <= 0) {
+            // Invalid choice, maybe reset price
+            setPrice(0);
+            return;
         }
+
+        if (hours <= 12.5) tariff = "halfDay";
+        else if (hours <= 25) tariff = "fullDay";
+        else if (hours <= 49) tariff = "weekend";
+        else tariff = "weekly";
 
         setCalculatedTariff(tariff);
 
-        // Calculate Price
+        // Price
         const tariffPrice = TARIFFS[tariff].price;
         const extraKmPrice = Math.max(0, extraKm) * 0.45;
         const totalPrice = tariffPrice + extraKmPrice;
 
         setPrice(Number(totalPrice.toFixed(2)));
 
-        // Update Parent
         setBookingData((prev: any) => ({
             ...prev,
-            startDate: startDate,
-            endDate: endDate,
+            startDate: startDateTime,
+            endDate: endDateTime,
             price: Number(totalPrice.toFixed(2)),
             tariff: tariff,
-            startTime: format(startDate, "HH:mm"), // Helper for existing logic if needed
+            startTime: startTime,
             extraKm: extraKm,
         }));
 
-    }, [range, extraKm, setBookingData, blockedDates]);
+    }, [range, startTime, endTime, extraKm, setBookingData]);
 
     const handleNext = () => {
-        if (range?.start && range?.end) {
+        if (range?.start && range?.end && price > 0 && startTime && endTime) {
             onNext();
         }
     };
 
     return (
-        <div className="flex flex-col gap-8 w-full max-w-xl mx-auto text-white">
+        <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto text-white">
             <div className="text-center space-y-2 mb-2">
                 <h2 className="text-3xl font-display font-bold">Wähle deinen Zeitraum</h2>
-                <p className="text-white/60">Start- und Endzeit einfach im Kalender verbinden.</p>
+                <p className="text-white/60">Datum wählen und Uhrzeiten eintragen.</p>
             </div>
 
-            {/* Glass Container */}
-            <div className="bg-primary-950/40 p-8 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-md space-y-8 relative overflow-hidden">
+            <div className="grid lg:grid-cols-2 gap-8 items-start">
 
-                {/* Glow Effect */}
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
+                {/* 1. CALENDAR (Inline) */}
+                <div className="bg-primary-950/40 p-6 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-md relative overflow-hidden flex flex-col items-center">
+                    {/* Glow */}
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-48 h-48 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none" />
 
-                <div className="relative z-10 space-y-6">
-                    {/* Date Range Picker */}
-                    <div className="flex flex-col gap-2">
-                        <Label className="text-white text-base">Mietzeitraum</Label>
-                        <JollyDateRangePicker
-                            className="w-full"
-                            value={range}
-                            onChange={(r) => r && setRange({ start: r.start as ZonedDateTime, end: r.end as ZonedDateTime })}
-                            granularity="minute"
-                            hourCycle={24}
-                            hideTimeZone
-                            label=""
-                            isDateUnavailable={isDateUnavailable as any}
-                        />
+                    <Label className="text-white text-lg font-bold mb-4 w-full text-left">Reisezeitraum</Label>
+                    <JollyRangeCalendar
+                        aria-label="Reisezeitraum wählen"
+                        className="bg-transparent border-none shadow-none"
+                        value={range}
+                        onChange={setRange}
+                        isDateUnavailable={isDateUnavailable}
+                    />
+                </div>
+
+                {/* 2. TIME SELECTION & EXTRAS */}
+                <div className="space-y-6">
+
+                    {/* Time Input Container */}
+                    <div className="bg-primary-950/40 p-6 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-md space-y-6 relative overflow-hidden">
+                        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-48 h-48 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                        <div>
+                            <Label className="text-white text-lg font-bold mb-4 block">Uhrzeiten</Label>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white/70 text-sm">Abholung</Label>
+                                    <Input
+                                        type="time"
+                                        className="bg-black/20 border-white/10 text-white h-12 [color-scheme:dark]"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-white/70 text-sm">Rückgabe</Label>
+                                    <Input
+                                        type="time"
+                                        className="bg-black/20 border-white/10 text-white h-12 [color-scheme:dark]"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Dynamic Info */}
-                        <div className="flex justify-between items-center text-xs px-1">
+                        <div className="flex justify-between items-center text-xs px-1 pt-4 border-t border-white/10">
                             <span className="text-white/50">
                                 Dein Tarif: <span className="text-accent font-medium">{TARIFFS[calculatedTariff].label}</span>
                             </span>
                             <span className="text-white/50">
-                                Dauer: {range && (differenceInMinutes(range.end.toDate(), range.start.toDate()) / 60).toFixed(1)} Std.
+                                Dauer: {range && startTime && endTime && (
+                                    (differenceInMinutes(
+                                        new Date(range.end.toString() + 'T' + endTime),
+                                        new Date(range.start.toString() + 'T' + startTime)
+                                    ) / 60).toFixed(1)
+                                )} Std.
                             </span>
                         </div>
                     </div>
 
                     {/* Extra KM */}
-                    <div className="space-y-2 pt-4 border-t border-white/10">
+                    <div className="bg-primary-950/40 p-6 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-md space-y-4">
                         <div className="flex justify-between items-center">
                             <Label className="text-white">Zusätzliche Kilometer</Label>
                             <span className="text-xs text-white/50">Inklusive: {TARIFFS[calculatedTariff].includedKm} km</span>
@@ -159,17 +208,18 @@ export function DateStep({
                             </div>
                         </div>
                     </div>
+
+                    <Button
+                        onClick={handleNext}
+                        disabled={!range?.start || !range?.end || !startTime || !endTime || price <= 0}
+                        className="w-full h-14 text-lg font-bold shadow-xl shadow-accent/20 rounded-xl"
+                        size="lg"
+                    >
+                        Weiter zur Zahlung
+                    </Button>
+
                 </div>
             </div>
-
-            <Button
-                onClick={handleNext}
-                disabled={!range?.start || !range?.end}
-                className="w-full h-14 text-lg font-bold shadow-xl shadow-accent/20 rounded-xl"
-                size="lg"
-            >
-                Weiter zur Zahlung
-            </Button>
         </div>
     );
 }

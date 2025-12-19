@@ -14,8 +14,40 @@ const anticDidone = Antic_Didone({
 });
 
 export const metadata: Metadata = {
-  title: "Pferdetransporter-Vermietung Gelpe",
-  description: "Flexibel mieten – 1 bis 7 Tage, inkl. Rückfahrkamera & Klimaanlage",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://pferdetransporter-gelpe.de"),
+  title: {
+    default: "Pferdetransporter-Vermietung Gelpe | Flexibel & Sicher",
+    template: "%s | Pferdetransporter Gelpe"
+  },
+  description: "Mieten Sie unseren Premium-Pferdetransporter in Wuppertal. 2-Pferde Kapazität, Videoüberwachung, Klimaanlage und flexiblen Tarifen ab 88€.",
+  keywords: ["Pferdetransporter mieten", "Pferdeanhänger", "Wuppertal", "Gelpe", "Pferdetransport", "Reitsport", "Transporter Vermietung"],
+  authors: [{ name: "Bergische Reitsport-Akademie Gelpe" }],
+  creator: "Bergische Reitsport-Akademie Gelpe",
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    url: "/",
+    title: "Pferdetransporter-Vermietung Gelpe | Flexibel & Sicher",
+    description: "Mieten Sie unseren Premium-Pferdetransporter in Wuppertal. 2-Pferde Kapazität, Videoüberwachung, Klimaanlage.",
+    siteName: "Pferdetransporter-Vermietung Gelpe",
+    images: [
+      {
+        url: "/images/transporter_dunkel.jpeg",
+        width: 1200,
+        height: 630,
+        alt: "Pferdetransporter Außenansicht",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pferdetransporter-Vermietung Gelpe",
+    description: "Premium Pferdetransporter in Wuppertal mieten.",
+    images: ["/images/transporter_dunkel.jpeg"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 import { Header } from "@/components/layout/header";
